@@ -4,6 +4,35 @@ import os
 import random as rand
 from collections import defaultdict
 
+# def colorPartitioning(V_i,C):
+#     edges = []
+#     # for edge in V:
+#     u = int(V_i[0])
+#     print(u)
+#     u_color = hashFunction(u,C)
+#     v = int(V_i[1])
+#     v_color = hashFunction(v,C)
+#     if u_color != v_color:
+#         return
+#     else:
+#         color = u_color
+#         edges.append((color,(u,v)))
+#     return edges
+
+# def colorPartioning2(V,C):
+#     edges_color = {}
+    
+
+#     # MR_ApproxTCwithNodeColors to implement algh. 1
+# def MR_ApproxTCwithNodeColors(V,C):
+#     # is necessary to partition here the data or are already partitioned?
+#     edgesColors = (V.flatMap(lambda x: colorPartitioning(x,C))
+#                     .groupByKey()
+#                     .flatMap(CountTriangles)
+#                     .mapValues(lambda vals: sum(vals)))
+#     # At the end must return the triangle's count
+#     return edgesColors
+
 def CountTriangles(edges):
     # Create a defaultdict to store the neighbors of each vertex
     neighbors = defaultdict(set)
@@ -34,34 +63,6 @@ def hashFunction(u,C):
     b = rand.randint(0,p-1)
     return (((a*u+b) % p) % C)
 
-# def colorPartitioning(V_i,C):
-#     edges = []
-#     # for edge in V:
-#     u = int(V_i[0])
-#     print(u)
-#     u_color = hashFunction(u,C)
-#     v = int(V_i[1])
-#     v_color = hashFunction(v,C)
-#     if u_color != v_color:
-#         return
-#     else:
-#         color = u_color
-#         edges.append((color,(u,v)))
-#     return edges
-
-# def colorPartioning2(V,C):
-#     edges_color = {}
-    
-
-#     # MR_ApproxTCwithNodeColors to implement algh. 1
-# def MR_ApproxTCwithNodeColors(V,C):
-#     # is necessary to partition here the data or are already partitioned?
-#     edgesColors = (V.flatMap(lambda x: colorPartitioning(x,C))
-#                     .groupByKey()
-#                     .flatMap(CountTriangles)
-#                     .mapValues(lambda vals: sum(vals)))
-#     # At the end must return the triangle's count
-#     return edgesColors
 
 def colorPartitioning(edge, C):
     # print(edge)
@@ -94,7 +95,7 @@ def main():
 
     ## Sys for debug
     C = 4
-    data_path = "/home/fd/repo/BigDataComputing_pyspark/data/facebook_small.txt"
+    data_path = "/home/fd/repo/BigDataComputing2023/data/facebook_small.txt"
 
     # INPUT READING
 	# 1. Read number of partitions
