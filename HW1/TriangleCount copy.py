@@ -48,14 +48,29 @@ def colorPartitioning(edge, C):
         return [(color, (u, v))]
 
 
-def MR_ApproxTCwithNodeColors(V, C):
-    edgesColors = (V.flatMap(lambda edge: colorPartitioning(edge, C)) 
-        .groupByKey() 
-        .flatMap(CountTriangles)
-        .reduceByKey(lambda x, y: x + y) )
+def MR_ApproxTCwithNodeColors1(V, C):
+    edgesColors = (V.flatMap(lambda edge: colorPartitioning(edge, C)))
         # .values() 
         # .sum())
-    return edgesColors.sum()
+    return edgesColors
+
+def MR_ApproxTCwithNodeColors2(V, C):
+    edgesColors = (V.groupByKey())
+        # .values() 
+        # .sum())
+    return edgesColors
+
+def MR_ApproxTCwithNodeColors3(V, C):
+    edgesColors = (V.flatMap(CountTriangles))
+        # .values() 
+        # .sum())
+    return edgesColors
+
+def MR_ApproxTCwithNodeColors4(V, C):
+    edgesColors = (V.reduceByKey(lambda x, y: x + y))
+        # .values() 
+        # .sum())
+    return edgesColors
 
 
 def main():
@@ -63,19 +78,13 @@ def main():
     # SPARK SETUP
     conf = SparkConf().setAppName('TriangleCount')
     sc = SparkContext(conf=conf)
-
     ## Sys for debug
     C = 4
     data_path = "/home/fd/repo/BigDataComputing2023/data/facebook_small.txt"
-
     # INPUT READING
-	# 1. Read number of partitions
-    # C = sys.argv[1] # !!!!!!!!!!!!!!!!!
-    # assert C.isdigit(), "C must be an integer"
     C = int(C)
 
 	# 2. Read input file and subdivide it into C random partitions
-    # data_path = sys.argv[2] # !!!!!!!!!!!!!!!!
     assert os.path.isfile(data_path), "File or folder not found"
     graph = sc.textFile(data_path,minPartitions=C).cache()
     graph.repartition(numPartitions=C)
@@ -86,8 +95,14 @@ def main():
     print("Number of Edges in the graph = ", numEdges)
     
     # Algorithm 1 -- MR_ApproxTCwithNodeColors
-    numTriangles = MR_ApproxTCwithNodeColors(edges, C)
-    print("Number of unique triangles in the graph:", numTriangles)
+    numTriangles1 = MR_ApproxTCwithNodeColors1(edges, C)
+    print("result after flatMap:", numTriangles1.take(18))
+    numTriangles2 = MR_ApproxTCwithNodeColors2(numTriangles1,C)
+    print("result after groubykey:", numTriangles2.take(5))
+    numTriangles3 = MR_ApproxTCwithNodeColors3(numTriangles2,C)
+    print("result after flatMap:", numTriangles3.take(5))
+    numTriangles4 = MR_ApproxTCwithNodeColors4(numTriangles3,C)
+    print("result after reducedByKey:", numTriangles4.take(5))
 
 if __name__ == "__main__":
     main()
