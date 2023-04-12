@@ -60,20 +60,26 @@ def MR_ApproxTCwithNodeColors(E, C):
     return t_final
 
 # Algorithm 2
+# def MR_ApproxTCwithSparkPartitions(E, C):
+#     edgesColors = (E.groupByKey()
+#                    .mapPartitions(CountTriangles)
+#                    .values()
+#                    .collect())
+#     t_final = ((C**2)*sum(edgesColors))
+#     return t_final
+
+# Algorithm 2
 def MR_ApproxTCwithSparkPartitions(E, C):
-    # Map each edge to a random partition
-    edges_partitions = E.map(lambda edge: (rand.randint(0, C - 1), edge))
+    edgesColors = (E.groupByKey(numPartitions=C))
+    print(edgesColors)
+    edgesColors = (edgesColors.mapPartitions(CountTriangles))
+    edgesColors = (E.values())
+    edgesColors = (E.collect())
+    t_final = edgesColors
+    # t_final = ((C**2)*sum(edgesColors))
+    return t_final
 
-    # Group the edges by partition and count the triangles in each partition
-    partition_triangle_counts = (edges_partitions
-                                 .groupByKey()
-                                 .map(lambda x: (x[0], CountTriangles(x[1])))
-                                 .collect())
 
-    # Sum the triangle counts for each partition and multiply by C^2
-    num_triangles = (C ** 2) * sum(count for _, count in partition_triangle_counts)
-
-    return num_triangles
 
 
 def main():
@@ -83,7 +89,7 @@ def main():
     sc = SparkContext(conf=conf)
 
     ## Sys for debug
-    C = 1
+    C = 2
     R = 5
     data_path = "/home/fd/repo/BigDataComputing2023/data/facebook_small.txt"
 
@@ -98,13 +104,19 @@ def main():
 	# SETTING GLOBAL VARIABLES
     
     # Loop to calculate R times MR_ApproxTCwithNodeColors
-    numTriangles_counts = []
+    t_final_colors = []
     runtimes = []
     for i in range(R):
         start_time = time.time()
-        numTriangles_counts.append(MR_ApproxTCwithNodeColors(edges, C))
+        t_final_colors.append(MR_ApproxTCwithNodeColors(edges, C))
         end_time = time.time()
         runtimes.append(end_time - start_time)
+
+    # Algorithm 2
+    start_time = time.time
+    t_final_part = MR_ApproxTCwithSparkPartitions(edges, C)
+    end_time = time.time()
+    runtime_part = end_time - start_time
 
     ## Output SECTION
     # Dataset = facebook_small.txt
@@ -118,15 +130,17 @@ def main():
     print("Number of Repetitions = ", R)
     # - Number of triangles (median over 5 runs) = 1595308
     print("Approximation through node coloring")
-    print("- Number of triangles  =", statistics.median(numTriangles_counts))
+    print("- Number of triangles  =", statistics.median(t_final_colors))
     # - Running time (average over 5 runs) = 481 ms
     avg_runtime = sum(runtimes) / len(runtimes)
     print("- Running time (average over 5 runs) = {} ms".format(avg_runtime*1000))
 
     print("Approximation through Spark partitions")
     # - Number of triangles = 1587400
-    
+    print("Number of triangles = ", t_final_part)
     # - Running time = 140 ms
+    print("Running time = ", runtime_part)
+
 
 if __name__ == "__main__":
     main()
