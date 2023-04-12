@@ -53,31 +53,34 @@ def colorPartitioning(edge, C):
 def MR_ApproxTCwithNodeColors(E, C):
     edgesColors = (E.flatMap(lambda edge: colorPartitioning(edge, C))
                     .groupByKey()
-                    .mapValues(CountTriangles) # mapValues because it must applied only to values of key-value pairs
+                    .mapValues(CountTriangles) # mapValues because it must applied only on values of key-value pairs
                     .values() # extract the values from the pairs
-                    .collect()) # collect to return only the list from the RDD)
+                    .collect()) # collect to return only the list from the RDD) !!!!! Warning: this action needs enough memory on the driver to store all data in X, hence it must be used on when the RDD is sufficiently small,
     t_final = ((C**2)*sum(edgesColors))
     return t_final
 
 # Algorithm 2
-# def MR_ApproxTCwithSparkPartitions(E, C):
-#     edgesColors = (E.groupByKey()
-#                    .mapPartitions(CountTriangles)
-#                    .values()
-#                    .collect())
-#     t_final = ((C**2)*sum(edgesColors))
-#     return t_final
-
-# Algorithm 2
 def MR_ApproxTCwithSparkPartitions(E, C):
-    edgesColors = (E.groupByKey(numPartitions=C))
-    print(edgesColors)
-    edgesColors = (edgesColors.mapPartitions(CountTriangles))
-    edgesColors = (E.values())
-    edgesColors = (E.collect())
+    edgesColors = (E.mapPartitions(CountTriangles)
+                   .groupByKey()
+                   .mapValues(lambda vals: sum(vals))
+                #    .values()
+                #    .collect()
+                   )
     t_final = edgesColors
     # t_final = ((C**2)*sum(edgesColors))
     return t_final
+
+# Algorithm 2
+# def MR_ApproxTCwithSparkPartitions(E, C):
+#     edgesColors = (E.groupByKey(numPartitions=C))
+#     print(edgesColors.values().collect())
+#     edgesColors = (edgesColors.mapPartitions(CountTriangles))
+#     edgesColors = (E.values())
+#     edgesColors = (E.collect())
+#     t_final = edgesColors
+#     # t_final = ((C**2)*sum(edgesColors))
+#     return t_final
 
 
 
@@ -99,9 +102,7 @@ def main():
 	# 2. Read input file and subdivide it into C random partitions
     assert os.path.isfile(data_path), "File or folder not found"
     rawData = sc.textFile(data_path,minPartitions=C).cache()
-    rawData.repartition(numPartitions=C)
     edges = rawData.map(lambda x: tuple(map(int, x.split(","))))
-	# SETTING GLOBAL VARIABLES
     
     # Loop to calculate R times MR_ApproxTCwithNodeColors
     t_final_colors = []
@@ -112,11 +113,13 @@ def main():
         end_time = time.time()
         runtimes.append(end_time - start_time)
 
+    rawData.repartition(numPartitions=C)
+    edges = rawData.map(lambda x: tuple(map(int, x.split(","))))
     # Algorithm 2
-    start_time = time.time
+    start_time = time.time()
     t_final_part = MR_ApproxTCwithSparkPartitions(edges, C)
     end_time = time.time()
-    runtime_part = end_time - start_time
+    runtime_part = (end_time - start_time)
 
     ## Output SECTION
     # Dataset = facebook_small.txt
@@ -139,7 +142,7 @@ def main():
     # - Number of triangles = 1587400
     print("Number of triangles = ", t_final_part)
     # - Running time = 140 ms
-    print("Running time = ", runtime_part)
+    print("Running time = {} ms".format(runtime_part*1000))
 
 
 if __name__ == "__main__":
